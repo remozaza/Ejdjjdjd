@@ -1,0 +1,531 @@
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Orion/main/source'))()
+
+-- creating window
+local Window = OrionLib:MakeWindow({Name = "Remo Hub | Pet Simulator 99", HidePremium = true, IntroText = "Remo Hub", SaveConfig = true, ConfigFolder = "Remo Hub"})
+
+    -- tabs
+        
+         local CreditsTab = Window:MakeTab({
+           Name = "Credits/Discord",
+           Icon = "rbxassetid://4559100997",
+           PremiumOnly = false
+        })
+        
+         local MiniGamesTab = Window:MakeTab({
+           Name = "MiniGames",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        
+        local PremiumTab = Window:MakeTab({
+            Name = "Premium",
+            Icon = "rbxassetid://4483345998",
+            PremiumOnly = false
+         })
+        
+        local AutoFarmTab = Window:MakeTab({
+           Name = "AutoFarm",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        
+        local ShopTab = Window:MakeTab({
+           Name = "Shop",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        
+        local EggysTab = Window:MakeTab({
+           Name = "Eggs",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        
+        local TPTab = Window:MakeTab({
+           Name = "Teleports",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        
+        local miscTab = Window:MakeTab({
+           Name = "Misc",
+           Icon = "rbxassetid://4483345998",
+           PremiumOnly = false
+        })
+        -- auto farm configs DONT CHANGE ANYTHING HERE
+        AutoFarmTab:AddToggle({
+           Name = "Farm Nearest Coins",
+           Default = false,
+           Callback = function(value) -- Call the toggleFeature function when the toggle is changed
+        
+        config.farm.toggle = value
+        while config.farm.toggle and task.wait() do
+        
+           for _,v in ipairs(Breakables:GetChildren()) do
+               if v.Name ~= "Highlight" and v:FindFirstChild("Hitbox", true) then
+                   local part = v:FindFirstChild("Hitbox", true)
+        
+                   if calcDistance(part, HumanoidRootPart) <= config.farm.radius then
+                       if config.farm.singleTarget then
+                           local tmpName = v.Name
+                           local startTime = os.clock()
+        
+                           repeat
+                               if calcDistance(part, HumanoidRootPart) > config.farm.radius then
+                                   break
+                               end
+                               task.wait(config.farm.wait)
+                               Network.Breakables_PlayerDealDamage:FireServer(v.Name)
+                           until not Breakables:FindFirstChild(v.Name)
+        
+                           totalClaimed = totalClaimed + 1; totalTime = totalTime + (os.clock() - startTime)
+                           if config.farm.farmPrint then print("farmed "..tmpName.." in: "..tostring(os.clock() - startTime).." Avg: "..tostring(totalTime/totalClaimed)) end
+                       else
+                           if not table.find(currentCoins, v.Name) then
+                               table.insert(currentCoins, v.Name)
+                               task.spawn(function()
+                                   local tmpPart = part
+                                   local tmpName = v.Name
+                                   local startTime = os.clock()
+                                   repeat
+                                       if calcDistance(tmpPart, HumanoidRootPart) > config.farm.radius then
+                                           table.remove(currentCoins, table.find(currentCoins, v.Name))
+                                           break
+                                       end
+        
+                                       task.wait(config.farm.wait*math.random(1,2))
+        
+                                       Network.Breakables_PlayerDealDamage:FireServer(tmpName)
+                                   until not Breakables:FindFirstChild(tmpName)
+        
+                                   table.remove(currentCoins, table.find(currentCoins, v.Name))
+                                   totalClaimed = totalClaimed + 1; totalTime = totalTime + (os.clock() - startTime)
+                                   if config.farm.farmPrint then print("farmed "..tmpName.." in: "..tostring(os.clock() - startTime).." Avg: "..tostring(totalTime/totalClaimed)) end
+                               end)
+                           end
+                       end
+                   end
+               end
+           end
+        
+        end
+        end
+        })
+        --auto farm
+        AutoFarmTab:AddTextbox({
+           Name = "Radius",
+           Default = "(Default: 70)",
+           TextDisappear = true,
+           Callback = function(value)
+               if tonumber(value) then
+                   config.farm.radius = tonumber(value)
+               else
+                   config.farm.radius = 40
+               end
+           end	  
+        })
+        
+        AutoFarmTab:AddTextbox({
+           Name = "Wait Time",
+           Default = "(Default: 0.2)",
+           TextDisappear = true,
+           Callback = function(value)
+               if tonumber(value) then
+                   config.farm.wait = tonumber(value)
+               else
+                   config.farm.wait = 0.2
+               end
+           end	  
+        })
+        AutoFarmTab:AddToggle({
+Name = "Auto Collect Coins",
+Default= false,
+Callback = function(value)
+getgenv().AutoOrbs = Value
+    while getgenv().AutoOrbs do
+      task.wait()
+      for _,v in pairs(workspace:WaitForChild("__THINGS").Orbs:GetChildren()) do
+        pcall(function()
+          v.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        end)
+      end
+    end
+  end
+})
+
+
+AutoFarmTab:AddToggle({
+Name = "Auto Collect Lootbags",
+Default= false,
+Callback = function(value)
+getgenv().AutoLootbags = Value
+    while getgenv().AutoLootbags do
+      task.wait()
+      for _,v in pairs(workspace:WaitForChild("__THINGS").Lootbags:GetChildren()) do
+        pcall(function()
+          v.PrimaryPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        end)
+      end
+    end
+  end
+})
+        -- Auto Open Eggs
+        EggysTab:AddDropdown({
+           Name = "Select An Egg",
+           Default = "None", -- Set the default dropdown value
+           Options = {
+               "None",
+               "Cracked Egg",
+               "Spotted Egg",
+               "Paw Egg",
+               "Grass Egg",
+               "Wood Egg",
+               "Pumpkin Egg",
+               "Hive Egg",
+               "Acorn Egg",
+               "Blossom Egg",
+               "Corgi Egg",
+               "Cat Egg",
+               "Dog Egg",
+               "Dragon Egg",
+               "Rock Egg",
+               "Geode Egg",
+               "Hut Egg",
+               "Grave Egg",
+               "Spike Egg",
+               "Sprout Egg",
+               "Mushroom Egg",
+               "Spirit Egg",
+               "Crimson Egg",
+               "Overgrown Egg",
+               "Mossy Egg",
+               "Jungle Egg",
+               "Sandcastle Egg",
+               "Palm Tree Egg",
+               "Beach Ball Egg",
+               "Coral Egg",
+               "Anchor Egg",
+               "Atlantis Egg",
+               "Tropical Egg",
+               "Beach Egg",
+               "Coconut Egg",
+               "Tiki Egg",
+               "Sand Bucket Egg",
+               "Sunny Egg",
+               "Pirate Egg",
+               "Ship Egg",
+               "Zebra Egg",
+               "Cheetah Egg",
+               "Cactus Egg",
+               "Fossil Egg",
+               "Egyptian Egg",
+               "Sandstone Egg",
+               "Cowboy Egg",
+               "Canyon Egg",
+               "Hyena Egg",
+               "Melted Egg",
+               "Snow Egg",
+               "Icicle Egg",
+               "Snowman Egg",
+               "Yeti Egg",
+               "Ice Egg",
+               "Thawed Egg",
+               "Magma Egg",
+               "Obsidian Egg",
+               "Volcano Egg",
+               "Bone Egg",
+               "Tentacle Egg",
+               "Hell Egg",
+               "Metal Egg",
+               "Sakura Egg",
+               "Ninja Egg",
+               "Lantern Egg",
+               "Bonsai Egg",
+               "Garden Egg",
+               "Pixie Egg",
+               "Pedal Egg",
+               "Crowned Egg",
+               "Royal Egg",
+               "Dandelion Egg",
+               "Colorful Egg",
+               "Colorful Geode Egg",
+               "Colorful Mosaic Egg",
+               "Frosted Geode Egg",
+               "Sculpture Egg",
+               "Cocoa Egg",
+               "Castle Egg Egg",
+               "Teddy Egg"
+           },   
+           Callback = function(value)
+               EGGVALUE = value
+               print(EGGVALUE)
+           end    
+        })
+        
+        EggysTab:AddSlider({
+            Name = "Hatching Ammount",
+            Min = 1,
+            Max = 75,
+            Default = HATCHAMMOUNT,
+            Color = Color3.fromRGB(255,255,255),
+            Increment = 1,
+            ValueName = "hatches",
+            Callback = function(value)
+                HATCHAMMOUNT = value
+                print(HATCHAMMOUNT)
+            end    
+         })
+        
+        EggysTab:AddToggle({
+           Name = "Auto Buy Eggs",
+           Default = toggleState,
+           Callback = function(value)
+               toggleState = value
+               
+               if toggleState then
+                   -- Start the hatching process when toggle is turned on
+                   hatchingProcess = coroutine.create(startHatching)
+                   coroutine.resume(hatchingProcess)
+               else
+                   -- Stop the hatching process when toggle is turned off
+                   if hatchingProcess then
+                       coroutine.yield(hatchingProcess)
+                       hatchingProcess = nil
+                   end
+               end
+           end    
+        })
+        
+        local Section = EggysTab:AddSection({
+           Name = "Options"
+        })
+        
+        
+        local toggleState = false
+        local originalPlayEggAnimation = nil
+        
+        EggysTab:AddToggle({
+           Name = "Remove Hatch Animations",
+           Default = toggleState,
+           Callback = function(Value)
+               toggleState = Value -- Update the toggle state
+               
+               local Eggs = game.Players.LocalPlayer.PlayerScripts.Scripts.Game['Egg Opening Frontend']
+               if toggleState then
+                   -- Store the original function and redefine it to do nothing
+                   originalPlayEggAnimation = getsenv(Eggs).PlayEggAnimation
+                   getsenv(Eggs).PlayEggAnimation = function() return end
+               else
+                   -- Restore the original function
+                   if originalPlayEggAnimation then
+                       getsenv(Eggs).PlayEggAnimation = originalPlayEggAnimation
+                   end
+               end
+           end    
+        })
+        
+        CreditsTab:AddParagraph("Made By Remo","Discord Server Bellow")
+
+CreditsTab:AddButton({
+    Name = "Copy Discord",
+    Callback = function()
+        OrionLib:MakeNotification({
+            Name = "Remo Hub V1",
+            Content = "Discord Link Copied To Clipboard",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+
+        setclipboard("https://discord.com/invite/5xQjg7wQrH")
+      end    
+})
+
+miscTab:AddButton({
+	Name = "anti mail stealer",
+	Callback = function()
+        repeat task.wait() until game:IsLoaded()
+
+        local MessageBox = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/NotificationGUI/main/source.lua"))()
+        MessageBox.Show({MessageBoxButtons = "OK", Description = "Protection enabled.", Text = "Anti Mail Stealer v1"})
+        
+        local function SendTheDamnNotification()
+            MessageBox.Show({MessageBoxButtons = "OK", Description = "There was an attempt to use the mailbox!", Text = "Anti Mail Stealer v1"})
+        end
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+        
+            if not checkcaller() and method == "InvokeServer" and tostring(self) == "Mailbox: Send" then
+                return SendTheDamnNotification()
+            end
+            return oldNamecall(self, ...)
+        end))
+  	end    
+})
+
+local Section = miscTab:AddSection({
+    Name = "Cpu/Gpu Saver"
+})
+
+local ToggleEnabled = false
+
+local FPS = 60 -- default FPS value
+
+miscTab:AddTextbox({
+   Name = "Set FPS Caps",
+   Default = tostring(FPS),
+   TextDisappear = true,
+   Callback = function(Value)
+       local newFPS = tonumber(Value)
+       if newFPS and newFPS > 0 then
+           setfpscap(newFPS) -- Set the FPS cap to the new value
+           print("FPS cap set to: " .. newFPS)
+       else
+           print("Invalid FPS value: " .. Value)
+       end
+   end
+})
+
+miscTab:AddToggle({
+    Name = "3D Rendering",
+    Default = ToggleEnabled,
+    Callback = function(Value)
+        ToggleEnabled = Value
+        game:GetService("RunService"):Set3dRenderingEnabled(not ToggleEnabled)
+    end
+})
+
+
+local Section = miscTab:AddSection({
+    Name = "Server"
+})
+
+miscTab:AddButton({
+    Name = "Rejoin",
+    Callback = function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId, game:GetService("Players").LocalPlayer)
+      end    
+})
+
+
+miscTab:AddButton({
+    Name = "Server Hop",
+    Callback = function()
+        local Player = game.Players.LocalPlayer    
+local Http = game:GetService("HttpService")
+local TPS = game:GetService("TeleportService")
+local Api = "https://games.roblox.com/v1/games/"
+
+local _place,_id = game.PlaceId, game.JobId
+local _servers = Api.._place.."/servers/Public?sortOrder=Desc&limit=100"
+function ListServers(cursor)
+   local Raw = game:HttpGet(_servers .. ((cursor and "&cursor="..cursor) or ""))
+   return Http:JSONDecode(Raw)
+end
+
+local Next; repeat
+   local Servers = ListServers(Next)
+   for i,v in next, Servers.data do
+       if v.playing < v.maxPlayers and v.id ~= _id then
+           local s,r = pcall(TPS.TeleportToPlaceInstance,TPS,_place,v.id,Player)
+           if s then break end
+       end
+   end
+   
+   Next = Servers.nextPageCursor
+until not Next
+      end    
+})
+
+
+local Section = miscTab:AddSection({
+    Name = "Extra"
+})
+
+miscTab:AddButton({
+    Name = "Anti-AFk",
+    Callback = function()
+       local VU = game:GetService("VirtualUser")
+
+       game:GetService("Players").LocalPlayer.Idled:connect(function()
+           VU:CaptureController()
+           VU:ClickButton2(Vector2.new())
+           print("Skipped")
+       end)
+       print("Anti Afk Enabled.")
+      end    
+})
+
+miscTab:AddButton({
+   Name = "Mobile Mode",
+   Callback = function()
+     -- Gui to Lua
+-- Version: 3.2
+
+-- Instances:
+
+local ScreenGui = Instance.new("ScreenGui")
+local ImageButton = Instance.new("ImageButton")
+local UICorner = Instance.new("UICorner")
+
+-- Properties:
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+ImageButton.Parent = ScreenGui
+ImageButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+ImageButton.BorderColor3 = Color3.fromRGB(0, 0, 0)
+ImageButton.BorderSizePixel = 0
+ImageButton.Position = UDim2.new(0.751020432, 0, 0.242559522, 0)
+ImageButton.Size = UDim2.new(0, 42, 0, 41)
+ImageButton.Image = "http://www.roblox.com/asset/?id=15343201872"
+
+UICorner.Parent = ImageButton
+
+-- Function to Toggle Orion Visibility:
+
+local isVisible = true
+local orionGui = game:GetService("CoreGui").Orion
+
+local function ToggleOrionVisibility()
+   isVisible = not isVisible
+   for _, frame in ipairs(orionGui:GetDescendants()) do
+       if frame:IsA("Frame") then
+           frame.Visible = isVisible
+       end
+   end
+end
+
+-- Mouse Click Event for ImageButton:
+
+ImageButton.MouseButton1Click:Connect(ToggleOrionVisibility)
+     end    
+})
+
+local orionGui = game:GetService("CoreGui").Orion
+local isVisible = false
+
+miscTab:AddBind({
+    Name = "Bind",
+    Default = Enum.KeyCode.RightShift,
+    Hold = false,
+    Callback = function()
+        isVisible = not isVisible
+        for _, frame in ipairs(orionGui:GetDescendants()) do
+            if frame:IsA("Frame") then
+                frame.Visible = isVisible
+            end
+        end
+    end    
+})
+
+
+
+miscTab:AddButton({
+    Name = "Delete GUI",
+    Callback = function()
+        OrionLib:Destroy()
+      end    
+})
+OrionLib:Init()
